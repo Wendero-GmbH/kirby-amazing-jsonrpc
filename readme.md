@@ -12,13 +12,14 @@ kirby()->set('rpc', 'get_users', function () {
 });
 ```
 
-And this is how you would call it:
+You would call it by making a `POST` request to the `/jsonrpc` endpoint with the following body:
 
 ```json
 {
     "jsonrpc" : "2.0",
     "method" : "get_users",
-    "params" : []
+    "params" : [],
+    "id" : 1
 }
 ```
 
@@ -34,14 +35,16 @@ kirby()->set('rpc', 'add', function ($a, $b) {
 {
     "jsonrpc" : "2.0",
     "method" : "add",
-    "params" : [3, 4]
+    "params" : [3, 4],
+    "id" : 234
 }
 ```
 The response returned by the server will be:
 ```json
 {
     "jsonrpc" : "2.0",
-    "result" : 7
+    "result" : 7,
+    "id" : 234
 }
 ```
 
