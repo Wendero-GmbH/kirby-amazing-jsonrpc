@@ -5,13 +5,26 @@ namespace Kirby\Registry {
   use Kirby\Registry;
 
   class Rpc extends Entry {
-    public function set($name, callable $callback) {
-      $this->kirby->rpc->add($name, $callback);
+    public function set(Array $conf) {
+      $this->kirby->rpc->add($conf);
     }
   }
 }
 
 namespace JsonRpc {
+
+  class RpcMethod {
+    public $function;
+    public $rolesWhitelist = [];
+    public function __construct(callable $function, Array $roles = []) {
+      $this->function = $function;
+      $this->rolesWhitelist = $roles;
+    }
+    public function allowed(\User $user) {
+      return size($this->rolesWhitelist) === 0
+          || in_array($user->role(), $this->rolesWhitelist);
+    }
+  }
 
   class RpcDispatcher {
 
@@ -93,7 +106,7 @@ namespace JsonRpc {
 
       $cb = $this->methods[$method];
 
-      $info = new \ReflectionFunction($cb);
+      $info = new \ReflectionFunction($cb->function);
 
       $nargs = $info->getNumberOfRequiredParameters();
 
@@ -108,13 +121,24 @@ namespace JsonRpc {
       }
 
       try {
-        $r = call_user_func_array($cb, $params);
 
-        return new \Response([
-          'result' => $r,
-          'jsonrpc' => self::JSON_RPC_VERSION,
-          'id' => $id
-        ], 'json');
+        if ($cb->allowed(kirby()->site()->user())) {
+
+          $r = call_user_func_array($cb->function, $params);
+
+          return new \Response([
+            'result' => $r,
+            'jsonrpc' => self::JSON_RPC_VERSION,
+            'id' => $id
+          ], 'json');
+
+
+        }
+        else {
+          return new \Response([
+            'error' => 'not authorized'
+          ], 'json', 501);
+        }
       }
       catch (Exception $e) {
         return self::error(self::INTERNAL_ERROR, 'error :(');
@@ -123,22 +147,33 @@ namespace JsonRpc {
     }
 
     /**
-     * @param string $name
-     * @param callable $callback
+     * @param Array $conf
      */
-    public function add($name, callable $callback) {
-      if (!is_string($name)) {
+    public function add(Array $conf) {
+
+      if (!array_key_exists('method', $conf)) {
+        throw new \Exception('missing method');
+      }
+
+      if (!is_string($conf['method'])) {
         throw new \Exception('method name must be string');
       }
+
+      $name = $conf['method'];
+
+      $callback = $conf['action'];
 
       if (array_key_exists($name, $this->methods)) {
         throw new \Exception("method name $name already taken");
       }
 
-      $this->methods[$name] = $callback;
+      $this->methods[$name] = new RpcMethod($callback);
+
+      if (array_key_exists('roles', $conf)) {
+        $this->methods[$name]->rolesWhitelist = $conf['roles'];
+      }
     }
   }
 
   $kirby->rpc = new \JsonRpc\RpcDispatcher(kirby());  
 }
-

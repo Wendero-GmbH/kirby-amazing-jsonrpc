@@ -48,6 +48,18 @@ The response returned by the server will be:
 }
 ```
 
+If you want to make a method available only to users with certain role, then you can add a whitelist of roles as follows:
+
+```php
+kirby()->set('rpc', [
+  'method' => 'add',
+  'roles' => ['admin'],
+  'action' => function () {
+    return 'Hi!';
+  }
+]);
+```
+
 ## Installation
 
 Just copy the plugin directory into `app/site/plugins` and make sure it is called `amazing_jsonrpc`.
