@@ -52,7 +52,7 @@ The response returned by the server will be:
     "result" : 7,
     "id" : 234
 }
-
+```
 
 
 If you want to make a method available only to users with certain role, then you can add a whitelist of roles as follows:
