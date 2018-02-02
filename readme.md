@@ -7,9 +7,12 @@ Install this plugin to be able to easily define an API based on [JSON-RPC](http:
 For example, a procedure that returns all registered users could be set up as follows:
 
 ```php
-kirby()->set('rpc', 'get_users', function () {
-  return kirby()->site()->users()->toJson();
-});
+kirby()->set('rpc', [
+  'method' => 'get_users',
+  'action' => function () {
+    return kirby()->site()->users()->toJson();
+  }
+]);
 ```
 
 You would call it by making a `POST` request to the `/jsonrpc` endpoint with the following body:
@@ -26,9 +29,12 @@ You would call it by making a `POST` request to the `/jsonrpc` endpoint with the
 As a second example, this is how you would define a procedure that adds two numbers:
 
 ```php
-kirby()->set('rpc', 'add', function ($a, $b) {
-  return $a + $b;
-});
+kirby()->set('rpc', [
+  'method' => 'add',
+  'action' => function ($a, $b) {
+    return $a + $b;
+  }
+]);
 ```
 
 ```json
@@ -46,7 +52,8 @@ The response returned by the server will be:
     "result" : 7,
     "id" : 234
 }
-```
+
+
 
 If you want to make a method available only to users with certain role, then you can add a whitelist of roles as follows:
 
